@@ -1,0 +1,80 @@
+clear
+
+% 设定参数
+N = 10;             % 粒子数目
+maxiter = 100;      % 最大迭代次数
+w = 0.8;            % 惯性权重
+c1 = 1.0;           % 加速常数1
+c2 = 1.4;           % 加速常数2
+target = [1000, 1000, 500];% 目标坐标
+
+% 初始化无人机群位置和速度
+pos = rand(N, 3) * 200;  % 无人机群位置随机分布在200x200的区域内
+vel = zeros(N, 3);       % 初始速度为0
+
+% 计算每个粒子距离目标的距离
+distances = zeros(N, 1);
+for i = 1:N
+    distances(i) = norm(target - pos(i, :));
+end
+
+% 记录最优位置
+pbest = pos;
+pbest_distances = distances;
+
+% 找到最优粒子和其距离
+[gbest_distance, gbest_index] = min(pbest_distances);
+gbest = pbest(gbest_index, :);
+
+% 迭代计算
+for iter = 1:maxiter
+    % 更新速度和位置
+    for i = 1:N
+        % 更新速度
+        vel(i, :) = w * vel(i, :) ...
+            + c1 * rand(1) * (pbest(i, :) - pos(i, :)) ...
+            + c2 * rand(1) * (gbest - pos(i, :));
+        
+        % 更新位置
+        pos(i, :) = pos(i, :) + vel(i, :);
+    end
+    
+    % 计算每个粒子距离目标的距离
+    distances = zeros(N, 1);
+    for i = 1:N
+        distances(i) = norm(target - pos(i, :));
+    end
+    
+    % 更新最优位置
+    for i = 1:N
+        if distances(i) < pbest_distances(i)
+            pbest(i, :) = pos(i, :);
+            pbest_distances(i) = distances(i);
+        end
+    end
+    
+    % 更新全局最优位置
+    [new_gbest_distance, new_gbest_index] = min(pbest_distances);
+    if new_gbest_distance < gbest_distance
+        gbest_distance = new_gbest_distance;
+        gbest_index = new_gbest_index;
+        gbest = pbest(gbest_index, :);
+    end
+
+    figure(1);
+    clf;
+    % 绘制结果
+    scatter3(pos(:, 1), pos(:, 2), pos(:, 3), '*')
+    hold on
+    scatter3(target(1), target(2), target(3), 'r', 'filled')
+    scatter3(gbest(1), gbest(2), gbest(3), 'g', 'filled')
+    legend('无人机群', '目标', '最优位置')
+    xlim([-20 1200]);
+    ylim([-20 1200]);
+    zlim([-20 1200]);
+
+
+drawnow;
+
+
+end
